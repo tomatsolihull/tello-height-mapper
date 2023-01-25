@@ -3,3 +3,4 @@ tello = Tello()
 tello.connect()
 
 tello.land()
+print("don't die!!!")
