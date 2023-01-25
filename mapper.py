@@ -6,9 +6,9 @@ tello.connect()
 print("battery pct " + str(tello.get_battery()))
 
 tello.takeoff()
-tello.move_up(100)
+# tello.move_up(100)
 
-desired_height = 120
+desired_height = 175
 acceptable_delta = 20
 correction_factor = 20
 
@@ -27,14 +27,14 @@ def heightMeasureRoutine():
 			print("this is acceptable (+-" + str(acceptable_delta) + " of " + str(desired_height) + "cm)")
 			return print(str(tello.get_distance_tof()))
 
-		if(current_height > desired_height):
+		if current_height > desired_height:
 			print("too high! moving down")
 			try:
 				tello.move_down(correction_factor)
 			except:
 				print("brokey when going up!")
 
-		elif(current_height < desired_height):
+		elif current_height < desired_height:
 			print("too low! moving up")
 			try:
 				tello.move_up(correction_factor)
