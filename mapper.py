@@ -1,5 +1,11 @@
 from djitellopy import Tello
 import time
+import matplotlib.pyplot as plt
+
+
+# Graph Stuff
+graph_x = []
+graph_y = []
 
 tello = Tello()
 
@@ -21,18 +27,18 @@ print("Took off?")
 time.sleep(5)
 
 # all in CM
-desired_height = 175
-acceptable_delta = 20
+desired_height = 100
+acceptable_delta = 10
 correction_factor = 20
 
 upper_height = desired_height + acceptable_delta
 lower_height = desired_height - acceptable_delta
 
 def drone_ok():
-	if tello.get_battery() < 15:
+	if tello.get_battery() < 10:
 		print("battery is too low! " + str(tello.get_battery()) + "%")
 		return False
-	elif tello.get_flight_time() > 60*5:
+	elif tello.get_flight_time() > 60*10:
 		print("flight time is too long! " + str(tello.get_flight_time()) + "secs")
 		return False
 	else:
@@ -69,13 +75,37 @@ def levelling_system():
 		
 		time.sleep(1)
 
-def measuring_system():
+def measuring_system(pos):
 	print("measuring system start")
 
+	# get the distance from the drone to the ground
+	distance = tello.get_distance_tof()
+	print("distance: " + str(distance) + "cm at " + str(pos))
+
+	# add the distance to the graph
+	graph_x.append(pos)
+	graph_y.append(distance)
+
+
+forward_errors = 0
+def move_forward_loop(dist):
+	global forward_errors
+
+	if forward_errors > 5:
+		print("failed to move forward 5 times, landing")
+		tello.land()
+
+	try:
+		tello.move_forward(dist)
+	except:
+		forward_errors = forward_errors + 1
+		print("error moving forward! trying again in a few seconds...")
+		time.sleep(5)
+		move_forward_loop(dist)
 
 # The Mapping System
 pos = 0 # Assumed position of the drone, relative to start point (cm)
-end = 200 # End position of the drone (cm)
+end = 150 # End position of the drone (cm)
 step = 20 # Increment to move the drone in (cm)
 mapping = True # Are we mapping or not?
 
@@ -85,21 +115,30 @@ while mapping:
 	if not drone_ok() or pos >= end:
 		print("drone is not ok or we've reached the end of the line, trying to return home and land")
 		
-		tello.move_back(pos) # move back to the start
-		time.sleep(pos*0.8) # arbitrary time to get back to the start
+		# tello.move_back(pos) # move back to the start
+		# time.sleep(pos*0.8) # arbitrary time to get back to the start
 		tello.land()
+
+		print(graph_x)
+		print(graph_y)
+
+		plt.plot(graph_x, graph_y)
+		plt.xlabel('Distance')
+		plt.ylabel('Height')
+		plt.title('Heights')
+		plt.show()
 
 		mapping = False
 		break
 	else:
 		print("drone is ok and we're not at the end of the line, continuing")
 		
-		tello.move_forward(step)
+		move_forward_loop(step)
 		pos += step
 		
 		print("current position: " + str(pos))
 		
 		levelling_system()
-		measuring_system()
+		measuring_system(pos)
 
-		time.sleep(5) # arbitrary time to wait (secs)
+		#time.sleep(5) # arbitrary time to wait (secs)
