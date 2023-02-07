@@ -84,7 +84,7 @@ def measuring_system(pos):
 
 	# add the distance to the graph
 	graph_x.append(pos)
-	graph_y.append(distance)
+	graph_y.append(distance*-1)
 
 
 forward_errors = 0
